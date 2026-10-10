@@ -1,0 +1,48 @@
+[build-system]
+# 77: erste Fassung mit Lizenz als SPDX-Ausdruck (PEP 639); die Tabellenform `license = { text = ... }` ist veraltet.
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "fyos-plugin-mail"
+version = "0.2.0"
+description = "FYOS-Hub-Plugins Mail und Post: Mails aus IMAP-Konten nur lesen (App-Passwort, nur TLS; Quelle für Leitstand und Agent) und über den eigenen Listmonk senden (FYOS Post)"
+readme = "README.md"
+requires-python = ">=3.11"
+license = "Apache-2.0"
+authors = [{ name = "sirfyyn and FYOS CONTRIBUTORS" }]  # sauber: ok
+# Nur die Standardbibliothek (imaplib, email, ssl) und der Hub. Die Postfach-Quelle `mcp_hub.postfach` kommt mit fyos-hub 0.1.1;
+# auf 0.1.0 laufen die Werkzeuge mail.* trotzdem, nur die Anmeldung als Quelle für Leitstand und Tagesbrief entfällt.
+dependencies = ["fyos-hub>=0.1.0"]
+
+[project.optional-dependencies]
+test = ["pytest>=8"]
+
+# Der Hub lädt das Plugin von selbst, sobald das Paket installiert ist (Gruppe `mcp_hub.plugins`).
+# Der Name ist der `name` der Klasse, damit die Werkzeug-IDs (mail.konten, mail.eingang, mail.suchen, mail.lesen, post.*) gleich bleiben.
+[project.entry-points."mcp_hub.plugins"]
+mail = "fyos_plugin_mail.plugin:MailPlugin"
+# FYOS Post (Listmonk): post.zustand, post.senden, post.kampagne_entwurf, post.kampagne_testen. Ohne FYOS_POST_URL "aus".
+post = "fyos_plugin_mail.post:PostPlugin"
+
+# Der Installer findet den Katalogeintrag für FYOS Post (Gruppe `fyos.katalog`); die Funktion liefert den Pfad der Datei.
+[project.entry-points."fyos.katalog"]
+mail = "fyos_plugin_mail:katalog_pfad"
+
+# Einrichtung von Listmonk für das Plugin post (Vorlage, Rolle, API-Zugänge); Trockenlauf ohne --ja.
+[project.scripts]
+fyos-post-einrichten = "fyos_plugin_mail.post_einrichten:main"
+
+# Das Hub-Plugin `skills` liest die Skills aus dem Unterordner `skills/` dieses Pakets (Gruppe `fyos.skills`).
+[project.entry-points."fyos.skills"]
+mail = "fyos_plugin_mail"
+
+[tool.setuptools]
+packages = ["fyos_plugin_mail"]
+
+[tool.setuptools.package-data]
+fyos_plugin_mail = ["skills/*/*.md", "fyos-katalog.yaml", "bilder/*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]

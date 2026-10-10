@@ -1,0 +1,67 @@
+# Katalogeintrag für den FYOS-Installer (Schema: fyos-os/installer/fyos_installer/katalog.py): der Baustein „FYOS Post“,
+# das Plugin `post` dieses Pakets. Der Installer findet die Datei über den Entry-Point `fyos.katalog` (pyproject.toml);
+# die Skizze liegt daneben unter bilder/. Der Baustein „Mail lesen“ (Plugin `mail`) steht im Katalog des Installers.
+version: 1
+bausteine:
+  - id: post
+    titel: FYOS Post
+    kurz: "Dein eigener Mail-Dienst (Listmonk): der Agent schickt dir Mitteilungen und bereitet Kampagnen vor."
+    was_daraus_wird: |
+      Der Agent kann dir (und anderen Abonnenten deines Listmonk) eine Mitteilung als E-Mail schicken, zum Beispiel wenn eine Aufgabe fertig ist oder etwas deine Aufmerksamkeit braucht.
+      Außerdem legt er Kampagnen (Serienmails) als Entwurf an und schickt Testmails; gestartet wird eine Kampagne nie vom Agenten, das tust du in der Listmonk-Oberfläche.
+      Die Grenzen stehen im Code, nicht nur in der Rolle: Mails gehen nur an vorhandene Abonnenten, Betreff und Text werden nie als Vorlage ausgewertet, und es gibt höchstens 30 Sendungen am Tag (einstellbar).
+      „Angenommen“ heißt nicht „zugestellt“: scheitert der SMTP-Weg von Listmonk danach, steht der Fehler im Protokoll von Listmonk.
+      Ohne Adresse von Listmonk sagt der Agent ehrlich „FYOS Post ist nicht eingerichtet“.
+    bilder: [post-1.svg]
+    art: plugin
+    pflicht: false
+    abhaengig_von: [kern, agent]
+    voraussetzungen:
+      - Ein laufender Listmonk (die Werkzeuge sind gegen die API der Version 6 gebaut) mit eingerichtetem SMTP-Weg und einer Absenderadresse; Listmonk liefert dieser Baustein nicht mit
+      - Der Admin-Zugang von Listmonk für einen einmaligen Schritt, `fyos-post-einrichten --ja` (legt Vorlage, Rolle und API-Zugang an)
+      - Das Paket kommt aus dem Paketindex (FYOS_PAKETINDEX) oder der Plugin-Quelle (FYOS_PLUGIN_QUELLE), nicht von PyPI
+    quelle: { paket: fyos-plugin-mail, repo: fyos-plugin-mail }
+    reife: { agent: 2, gedaechtnis: 1 }
+    konfiguration:
+      - name: url
+        titel: Adresse von Listmonk
+        typ: url
+        beschreibung: Wo Listmonk für den Hub erreichbar ist, etwa http://listmonk:9000 (ohne Adresse ist FYOS Post nicht eingerichtet)
+        standard: ""
+        pflicht: false
+        umgebung: FYOS_POST_URL
+      - name: link
+        titel: Adresse der Listmonk-Oberfläche
+        typ: url
+        beschreibung: Wo du Listmonk im Browser öffnest; damit zeigen die Antworten Links zu Kampagnen (leer = keine Links)
+        standard: ""
+        pflicht: false
+        umgebung: FYOS_POST_LINK
+      - name: an
+        titel: Standardempfänger
+        typ: text
+        beschreibung: Die Adresse, an die Mitteilungen ohne Angabe gehen; sie muss in Listmonk Abonnent sein (leer = der Agent muss einen Empfänger nennen)
+        standard: ""
+        pflicht: false
+        umgebung: FYOS_POST_AN
+      - name: zugaenge
+        titel: Zugänge
+        typ: text
+        beschreibung: "Welcher Listmonk-Benutzer für welche Fläche gilt, als Paare Fläche=Benutzer oder Fläche=Benutzer/Name; Flächen sind os, chat, code, agent, dienste, * steht für alle übrigen. Die Vorgabe *=fyos genügt meist."
+        standard: "*=fyos"
+        pflicht: false
+        umgebung: FYOS_POST_ZUGAENGE
+      - name: token_fyos
+        titel: Token des Zugangs fyos
+        typ: geheim
+        beschreibung: Das Token des API-Benutzers fyos in Listmonk (legt `fyos-post-einrichten --ja --token-datei …` an); bei anderen Zugängen die Variable FYOS_POST_TOKEN_<ZUGANG> selbst setzen
+        standard: ""
+        pflicht: false
+        umgebung: FYOS_POST_TOKEN_FYOS
+      - name: tagesgrenze
+        titel: Sendungen am Tag
+        typ: zahl
+        beschreibung: Höchstens so viele Mails am Tag (UTC) über alle Zugänge; ein Sicherheitsgurt gegen Schleifen und Versehen
+        standard: 30
+        pflicht: false
+        umgebung: FYOS_POST_TAGESGRENZE

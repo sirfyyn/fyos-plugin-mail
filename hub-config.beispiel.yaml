@@ -1,0 +1,45 @@
+# Beispiel für die Einträge dieses Pakets in der Hub-Konfiguration (MCP_HUB_CONFIG_PATH, Vorgabe ./config.yaml): das Plugin
+# `mail` (Postfächer lesen) und das Plugin `post` (FYOS Post über Listmonk).
+# Ein Eintrag ist nur nötig für mehrere Konten, Geheimnisse oder `enabled: false`; das installierte Paket lädt sonst
+# von selbst über den Entry-Point und liest ein einzelnes Konto aus FYOS_MAIL_HOST, FYOS_MAIL_NUTZER und
+# FYOS_MAIL_PASSWORT, und FYOS Post aus FYOS_POST_URL, FYOS_POST_AN, FYOS_POST_ZUGAENGE und FYOS_POST_TOKEN_<ZUGANG>.
+plugins:
+  - name: mail
+    config:
+      # Weitere Konten. Passwörter stehen nie hier: passwort_env nennt die Umgebungsvariable, die das App-Passwort enthält.
+      # Das Plugin liest nur; es sendet, löscht und verschiebt nichts und lässt den Gelesen-Status, wie er war.
+      # sicherheit: imaps (Vorgabe, Port 993) oder starttls (Port 143). Unverschlüsselt verbindet das Plugin nie.
+      # ordner: die Ordner, die Suchen ohne `in:` durchsuchen (Vorgabe: INBOX).
+      konten:
+        - name: Privat
+          host: imap.example.com
+          nutzer: alex@example.com
+          passwort_env: FYOS_MAIL_PRIVAT_PW
+        - name: Verein
+          host: mail.example.org
+          port: 143
+          sicherheit: starttls
+          nutzer: alex
+          passwort_env: FYOS_MAIL_VEREIN_PW
+          ordner: [INBOX, Anfragen]
+    # Der Hub löst Geheimnisse aus der Umgebung oder aus /run/secrets/<name> auf und legt sie als Umgebungsvariable an,
+    # wo das Plugin sie liest.
+    secrets:
+      - { name: mail-privat-pw, env: FYOS_MAIL_PRIVAT_PW }
+      - { name: mail-verein-pw, env: FYOS_MAIL_VEREIN_PW }
+    # enabled: false           # schaltet das Plugin ab, auch wenn es installiert ist
+
+  # FYOS Post (Listmonk). Ohne `url` (und ohne FYOS_POST_URL in der Umgebung) ist das Plugin aus. Die Werte hier gehen der
+  # Umgebung vor. Token stehen nie hier, sondern als Geheimnis (unten) oder in der Umgebung.
+  - name: post
+    config:
+      url: http://listmonk:9000            # Adresse des Dienstes, so wie der Hub sie erreicht
+      link: https://post.example.org       # Adresse der Oberfläche, wie ein Mensch sie öffnet (nur für Links in Antworten)
+      an: team@example.org                 # Standardempfänger; ein vorhandener Abonnent von Listmonk
+      # Fläche=Zugang[/Anzeigename]; Flächen: os, chat, code, agent, dienste, * (alle übrigen).
+      zugaenge: "code=helfer/Code-Helfer,chat=helfer/Chat-Helfer,*=dienst/Dienst"
+      tagesgrenze: 30                      # Sendungen je UTC-Tag, über alle Zugänge
+      # zeitzone: Europe/Berlin            # Zeit in der Fußzeile der Mitteilung (Vorgabe)
+    secrets:
+      - { name: post-token-helfer, env: FYOS_POST_TOKEN_HELFER }
+      - { name: post-token-dienst, env: FYOS_POST_TOKEN_DIENST }
